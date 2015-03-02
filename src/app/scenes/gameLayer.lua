@@ -87,6 +87,10 @@ function gameLayer:ctor()
                     :scale(1.2)
                     :addTo(self)
                 self.cursors[id] = cursor
+
+                local label = string.format("sprite: %s , x = %d, y = %d",
+        							event.name, point.x, point.y)
+        		self.sprite.label:setString(label)
             end
         elseif event.name == "moved" then
             for id, point in pairs(event.points) do
@@ -112,8 +116,9 @@ function gameLayer:ctor()
             self.cursors = {}
         end
 
-        local label = string.format("sprite: %s , count = %d, index = %d", event.name, pointsCount, self.touchIndex)
-        self.sprite.label:setString(label)
+        local label = string.format("sprite: %s , count = %d, index = %d",
+        							event.name, pointsCount, self.touchIndex)
+       -- self.sprite.label:setString(label)
 
         if event.name == "ended" or event.name == "cancelled" then
             self.sprite.label:setString("")
