@@ -3,6 +3,10 @@ local GameLayer = class("GameLayer", function()
     return display.newScene("GameLayer")
 end)
 
+local backList = {}
+local kScanle  = 0.5 
+local maxHeight = 0
+local maxWidth  = 0
 function createTouchableSprite(p)
     local sprite = display.newScale9Sprite(p.image)
     sprite:setContentSize(p.size)
@@ -52,9 +56,29 @@ function GameLayer:moved(event)
 
     if pointCnt == 1 then 
         for id, point in pairs(event.points) do
-            local preX,preY = self.back:getPosition()
-            print("ffffffffffffffffff",point.id, point.x-self.preX_1, point.y-self.preY_1,preX,preY)
-            self.back:setPosition(preX+point.x-self.preX_1, preY+point.y-self.preY_1)
+            for k,v in pairs(backList) do 
+                local preX,preY = v:getPosition()
+
+                local nextX = preX+point.x-self.preX_1
+                local nextY = preY+point.y-self.preY_1
+
+                --v:setPosition(nextX,nextY)
+                if nextX >= (k-1)*maxWidth- maxWidth and nextX <= k*maxWidth - maxWidth then 
+                    v:setPositionX(nextX)
+                elseif nextX < (k-1)*maxWidth- maxWidth then 
+                     v:setPositionX((k-1)*maxWidth- maxWidth)
+                elseif nextX > (k-1)*maxWidth + maxWidth then 
+                     v:setPositionX(k*maxWidth - maxWidth )
+                end
+
+                if nextY >= -(maxHeight-display.height) and nextY <= 0 then 
+                    v:setPositionY(nextY)
+                elseif nextY < -(maxHeight-display.height) then 
+                    v:setPositionY(-(maxHeight-display.height))
+                elseif nextY > 0 then 
+                    v:setPositionY(0)
+                end
+            end
             self.preX_1 = point.x
             self.preY_1 = point.y
         end
@@ -126,14 +150,35 @@ function GameLayer:touch(event)
     return true
     
 end
+function GameLayer:initBackGround()
 
+    local back1 = display.newSprite("back.png")
+    back1:setFlippedX(true)
+    back1:setAnchorPoint(0,0)
+    back1:setScale(kScanle)
+    back1:setPosition(0,0)
+    self:addChild(back1)
+    table.insert(backList,back1)
+
+    local back2 = display.newSprite("back.png")
+    back2:setAnchorPoint(0,0)
+    back2:setScale(kScanle)
+    back2:setPosition(back1:getContentSize().width*kScanle,0)
+    self:addChild(back2)
+    table.insert(backList,back2)
+
+    maxHeight = (back1:getContentSize().height) * kScanle
+
+    maxWidth  = (back1:getContentSize().width ) * kScanle
+
+
+    print("xxxxxxxxxxxxxxxxxxx",maxWidth,maxHeight)
+end
 
 function GameLayer:ctor()
     
-    self.back = display.newSprite("back.png", 0, 0)
-    self.back:setAnchorPoint(cc.size(0.5,0.5))
-    self:addChild(self.back)
-
+  
+    self:initBackGround()
     self.cursors = {}
     self.touchIndex = 0
 
