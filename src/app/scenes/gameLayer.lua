@@ -1,4 +1,3 @@
-
 local GameLayer = class("GameLayer", function()
     return display.newScene("GameLayer")
 end)
@@ -51,6 +50,11 @@ function GameLayer:began(event)
     end
 end
 
+function GameLayer:pointDistance(x1,y1,x2,y2)
+
+    return (x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)
+end
+
 function GameLayer:moved(event)
     local pointCnt = table.nums(event.points)
 
@@ -63,7 +67,8 @@ function GameLayer:moved(event)
                 local nextY = preY+point.y-self.preY_1
 
                 --v:setPosition(nextX,nextY)
-                if nextX >= (k-1)*maxWidth- maxWidth and nextX <= k*maxWidth - maxWidth then 
+                local minVal = math.abs(maxWidth - display.width)
+                if nextX >= (k-1)*maxWidth- maxWidth +minVal and nextX <= k*maxWidth - maxWidth then 
                     v:setPositionX(nextX)
                 elseif nextX < (k-1)*maxWidth- maxWidth then 
                      v:setPositionX((k-1)*maxWidth- maxWidth)
@@ -83,7 +88,38 @@ function GameLayer:moved(event)
             self.preY_1 = point.y
         end
 
-    elseif pointCnt == 2 then 
+    elseif pointCnt == 2 then
+        local preDistance  = self:pointDistance(self.preX_1,self.preY_1,self.preX_2,self.preY_2)
+        local x1,y1,x2,y2
+        for id, point in pairs(event.points) do
+            if id == '0' then 
+                x1 = point.x
+                y1 = point.y
+                self.preX_1 =  point.x
+                self.preY_1 =  point.y
+            else
+                x2 = point.x
+                y2 = point.y
+                self.preX_2 =  point.x
+                self.preY_2 =  point.y
+            end
+        end
+        local nextDistance = self:pointDistance(x1,y1,x2,y2)
+
+        if nextDistance < preDistance then 
+            kScanle  = kScanle - 0.01
+        else
+            kScanle  = kScanle + 0.01
+        end
+
+        for k,v in pairs(backList) do
+            v:setScale(kScanle)
+
+            maxHeight = (v:getContentSize().height) * kScanle
+            maxWidth  = (v:getContentSize().width ) * kScanle
+        end
+
+       
 
     end
 
