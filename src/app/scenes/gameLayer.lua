@@ -1,14 +1,9 @@
---
--- Author: Your Name
--- Date: 2015-03-02 20:35:32
---
 
-local gameLayer = class("gameLayer", function()
-    return display.newLayer("gameLayer")
+local GameLayer = class("GameLayer", function()
+    return display.newScene("GameLayer")
 end)
 
-
-function gameLayer:createTouchableSprite(p)
+function createTouchableSprite(p)
     local sprite = display.newScale9Sprite(p.image)
     sprite:setContentSize(p.size)
 
@@ -25,7 +20,7 @@ function gameLayer:createTouchableSprite(p)
     return sprite
 end
 
-function gameLayer:drawBoundingBox(parent, target, color)
+function drawBoundingBox(parent, target, color)
     local cbb = target:getCascadeBoundingBox()
     local left, bottom, width, height = cbb.origin.x, cbb.origin.y, cbb.size.width, cbb.size.height
     local points = {
@@ -39,28 +34,122 @@ function gameLayer:drawBoundingBox(parent, target, color)
     parent:addChild(box, 1000)
 end
 
-function gameLayer:ctor()
+function GameLayer:began(event)
+    local pointCnt = table.nums(event.points)
+    for id, point in pairs(event.points) do
+        if id == 0 or id == '0' then 
+            self.preX_1 =  point.x
+            self.preY_1 =  point.y
+        else
+            self.preX_2 =  point.x
+            self.preY_2 =  point.y
+        end
+    end
+end
+
+function GameLayer:moved(event)
+    local pointCnt = table.nums(event.points)
+
+    if pointCnt == 1 then 
+        for id, point in pairs(event.points) do
+            local preX,preY = self.back:getPosition()
+            print("ffffffffffffffffff",point.id, point.x-self.preX_1, point.y-self.preY_1,preX,preY)
+            self.back:setPosition(preX+point.x-self.preX_1, preY+point.y-self.preY_1)
+            self.preX_1 = point.x
+            self.preY_1 = point.y
+        end
+
+    elseif pointCnt == 2 then 
+
+    end
+
+end
+
+function GameLayer:touch(event)
+
+    -- event.name 是触摸事件的状态：began, moved, ended, cancelled, added（仅限多点触摸）, removed（仅限多点触摸）
+    -- event.points 包含所有触摸点，按照 events.point[id] = {x = ?, y = ?} 的结构组织
+    local str = {}
+    for id, point in pairs(event.points) do
+        str[table.nums(str) + 1] = string.format("id: %s, x: %0.2f, y: %0.2f", point.id, point.x, point.y)
+    end 
+    local pointsCount =table.nums(str)
+    table.sort(str)
+    self.labelPoints:setString(table.concat(str, "\n"))
+
+    if event.name == "began" or event.name == "added" then
+        self:began(event)
+        self.touchIndex = self.touchIndex + 1
+        for id, point in pairs(event.points) do
+            local cursor = display.newSprite("Cursor.png")
+                :pos(point.x, point.y)
+                :scale(1.2)
+                :addTo(self)
+            self.cursors[id] = cursor
+        end
+       
+
+    elseif event.name == "moved" then
+        self:moved(event)
+        for id, point in pairs(event.points) do
+            local cursor = self.cursors[id]
+            local rect = self.sprite:getBoundingBox()
+            if cc.rectContainsPoint(rect, cc.p(point.x, point.y)) then
+                -- 检查触摸点的位置是否在矩形内
+                cursor:setPosition(point.x, point.y)
+                cursor:setVisible(true)
+            else
+                cursor:setVisible(false)
+            end
+        end
+    elseif event.name == "removed" then
+        for id, point in pairs(event.points) do
+            self.cursors[id]:removeSelf()
+            self.cursors[id] = nil
+        end
+    else
+        for _, cursor in pairs(self.cursors) do
+            cursor:removeSelf()
+        end
+        self.cursors = {}
+    end
+
+    local label = string.format("sprite: %s , count = %d, index = %d", event.name, pointsCount, self.touchIndex)
+    self.sprite.label:setString(label)
+
+    if event.name == "ended" or event.name == "cancelled" then
+        self.sprite.label:setString("")
+        self.labelPoints:setString("")
+    end
+
+    -- 返回 true 表示要响应该触摸事件，并继续接收该触摸事件的状态变化
+    return true
+    
+end
+
+
+function GameLayer:ctor()
+    
     self.back = display.newSprite("back.png", 0, 0)
     self.back:setAnchorPoint(cc.size(0.5,0.5))
     self:addChild(self.back)
 
-
     self.cursors = {}
     self.touchIndex = 0
 
-    self.sprite = self:createTouchableSprite({
-            image = "WhiteButton.png",
-            size = cc.size(500, 600),
+    -- createTouchableSprite() 定义在 includes/functions.lua 中
+    self.sprite = createTouchableSprite({
+            --image = "WhiteButton.png",
+            size = cc.size(display.width, display.height),
             label = "TOUCH ME !",
             labelColor = cc.c3b(255, 0, 0)})
         :pos(display.cx, display.cy)
         :addTo(self)
-    self:drawBoundingBox(self, self.sprite, cc.c4f(0, 1.0, 0, 1.0))
+    drawBoundingBox(self, self.sprite, cc.c4f(0, 1.0, 0, 1.0))
 
-
-     local labelPoints = cc.ui.UILabel.new({text = "", size = 24})
-        :align(display.CENTER_TOP, display.cx, display.top - 120)
-        :addTo(self)
+    self.labelPoints = cc.ui.UILabel.new({text = "", size = 24})
+    :align(display.CENTER_TOP, display.cx, display.top - 120)
+    :addTo(self)
 
     -- 启用触摸
     self.sprite:setTouchEnabled(true)
@@ -68,83 +157,21 @@ function gameLayer:ctor()
     self.sprite:setTouchMode(cc.TOUCH_MODE_ALL_AT_ONCE) -- 多点
     -- self.sprite:setTouchMode(cc.TOUCH_MODE_ONE_BY_ONE) -- 单点（默认模式）
     -- 添加触摸事件处理函数
-    self.sprite:addNodeEventListener(cc.NODE_TOUCH_EVENT, function(event)
-        -- event.name 是触摸事件的状态：began, moved, ended, cancelled, added（仅限多点触摸）, removed（仅限多点触摸）
-        -- event.points 包含所有触摸点，按照 events.point[id] = {x = ?, y = ?} 的结构组织
-        local str = {}
-        for id, point in pairs(event.points) do
-            str[#str + 1] = string.format("id: %s, x: %0.2f, y: %0.2f", point.id, point.x, point.y)
-        end
-        local pointsCount = #str
-        table.sort(str)
-        labelPoints:setString(table.concat(str, "\n"))
-
-        if event.name == "began" or event.name == "added" then
-            self.touchIndex = self.touchIndex + 1
-            for id, point in pairs(event.points) do
-                local cursor = display.newSprite("Cursor.png")
-                    :pos(point.x, point.y)
-                    :scale(1.2)
-                    :addTo(self)
-                self.cursors[id] = cursor
-
-                local label = string.format("sprite: %s , x = %d, y = %d",
-        							event.name, point.x, point.y)
-        		self.sprite.label:setString(label)
-            end
-        elseif event.name == "moved" then
-            for id, point in pairs(event.points) do
-                local cursor = self.cursors[id]
-                local rect = self.sprite:getBoundingBox()
-                if cc.rectContainsPoint(rect, cc.p(point.x, point.y)) then
-                    -- 检查触摸点的位置是否在矩形内
-                    cursor:setPosition(point.x, point.y)
-                    cursor:setVisible(true)
-                else
-                    cursor:setVisible(false)
-                end
-            end
-        elseif event.name == "removed" then
-            for id, point in pairs(event.points) do
-                self.cursors[id]:removeSelf()
-                self.cursors[id] = nil
-            end
-        else
-            for _, cursor in pairs(self.cursors) do
-                cursor:removeSelf()
-            end
-            self.cursors = {}
-        end
-
-        local label = string.format("sprite: %s , count = %d, index = %d",
-        							event.name, pointsCount, self.touchIndex)
-       -- self.sprite.label:setString(label)
-
-        if event.name == "ended" or event.name == "cancelled" then
-            self.sprite.label:setString("")
-            labelPoints:setString("")
-        end
-
-        -- 返回 true 表示要响应该触摸事件，并继续接收该触摸事件的状态变化
-        return true
-    end)
+    self.sprite:addNodeEventListener(cc.NODE_TOUCH_EVENT,function (event) return self:touch(event) end )
 
     cc.ui.UILabel.new({
         text = "注册多点触摸后，目标将收到所有触摸点的数据\nadded 和 removed 指示触摸点的加入和移除",
         size= 24})
         :align(display.CENTER, display.cx, display.top - 80)
         :addTo(self)
-
     --
-
-    --app:createNextButton(self)
-    --app:createTitle(self, "多点触摸测试 - 响应触摸事件")
 end
 
-function gameLayer:onEnter()
+function GameLayer:onEnter()
 end
 
-function gameLayer:onExit()
+function GameLayer:onExit()
 end
 
-return gameLayer
+
+return GameLayer
