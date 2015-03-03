@@ -3,7 +3,7 @@ local GameLayer = class("GameLayer", function()
 end)
 
 local backList = {}
-local kScanle  = 0.5 
+local kScanle  = 1 
 local maxHeight = 0
 local maxWidth  = 0
 function createTouchableSprite(p)
@@ -60,30 +60,30 @@ function GameLayer:moved(event)
 
     if pointCnt == 1 then 
         for id, point in pairs(event.points) do
-            for k,v in pairs(backList) do 
-                local preX,preY = v:getPosition()
+            --for k,v in pairs(backList) do 
+                local preX,preY = self.mapLayer:getPosition()
 
                 local nextX = preX+point.x-self.preX_1
                 local nextY = preY+point.y-self.preY_1
 
-                --v:setPosition(nextX,nextY)
+                self.mapLayer:setPosition(nextX,nextY)
                 local minVal = math.abs(maxWidth - display.width)
-                if nextX >= (k-1)*maxWidth- maxWidth +minVal and nextX <= k*maxWidth - maxWidth then 
-                    v:setPositionX(nextX)
-                elseif nextX < (k-1)*maxWidth- maxWidth then 
-                     v:setPositionX((k-1)*maxWidth- maxWidth)
-                elseif nextX > (k-1)*maxWidth + maxWidth then 
-                     v:setPositionX(k*maxWidth - maxWidth )
-                end
+                -- if nextX >= (k-1)*maxWidth- maxWidth +minVal and nextX <= k*maxWidth - maxWidth then 
+                --     self.mapLayer:setPositionX(nextX)
+                -- elseif nextX < (k-1)*maxWidth- maxWidth then 
+                --     self.mapLayer:setPositionX((k-1)*maxWidth- maxWidth)
+                -- elseif nextX > (k-1)*maxWidth + maxWidth then 
+                --      self.mapLayer:setPositionX(k*maxWidth - maxWidth )
+                -- end
 
-                if nextY >= -(maxHeight-display.height) and nextY <= 0 then 
-                    v:setPositionY(nextY)
-                elseif nextY < -(maxHeight-display.height) then 
-                    v:setPositionY(-(maxHeight-display.height))
-                elseif nextY > 0 then 
-                    v:setPositionY(0)
-                end
-            end
+                -- if nextY >= -(maxHeight-display.height) and nextY <= 0 then 
+                --     self.mapLayer:setPositionY(nextY)
+                -- elseif nextY < -(maxHeight-display.height) then 
+                --     self.mapLayer:setPositionY(-(maxHeight-display.height))
+                -- elseif nextY > 0 then 
+                --     self.mapLayer:setPositionY(0)
+                -- end
+            --end
             self.preX_1 = point.x
             self.preY_1 = point.y
         end
@@ -112,14 +112,14 @@ function GameLayer:moved(event)
             kScanle  = kScanle + 0.01
         end
 
-        for k,v in pairs(backList) do
-            v:setScale(kScanle)
+        -- for k,v in pairs(backList) do
+        --     v:setScale(kScanle)
 
-            maxHeight = (v:getContentSize().height) * kScanle
-            maxWidth  = (v:getContentSize().width ) * kScanle
-        end
+        --     maxHeight = (v:getContentSize().height) * kScanle
+        --     maxWidth  = (v:getContentSize().width ) * kScanle
+        -- end
 
-       
+        self.mapLayer:setScale(kScanle)
 
     end
 
@@ -213,8 +213,12 @@ end
 
 function GameLayer:ctor()
     
-  
-    self:initBackGround()
+    self.mapLayer = require("app.scenes.MapLayer"):new()
+
+    --print("xxxxxxxxxxxx",mapLayer:getContentSize().width)
+    self:addChild(self.mapLayer)
+
+    --self:initBackGround()
     self.cursors = {}
     self.touchIndex = 0
 
