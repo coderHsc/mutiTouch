@@ -258,9 +258,4 @@ end
 function GameLayer:onExit()
 end
 
-
-<<<<<<< HEAD
 return GameLayer
-=======
-return GameLayer
->>>>>>> origin/master
