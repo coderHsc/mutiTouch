@@ -9,8 +9,21 @@ function MainScene:ctor()
     --     :align(display.CENTER, display.cx, display.cy)
     --     :addTo(self)
 
-    local gamelayer = require ("app.scenes.gameLayer"):new()
-    self:addChild(gamelayer)
+    local ui_battle_back = require ("app.ui.ui_battle_back"):new()
+    self:addChild(ui_battle_back)
+
+    local control_back =  require("app.control.control_back"):new()
+    control_back:init(ui_battle_back)
+    self:addChild(control_back)
+
+    local test = require("app.ui.ui_battle_build"):new()
+    ui_battle_back:addChild(test)
+
+    local control_build =  require("app.control.control_build"):new()
+    control_build:init(ui_battle_back)
+    self:addChild(control_build)
+
+
 
 end
 
